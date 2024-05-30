@@ -20,12 +20,12 @@ public class Estoque_service {
     private User_repository user_repository;
 
 
-    public List<Estoque_model> AllProdutos(String email) {
+    /*public List<Estoque_model> AllProdutos(String email) {
         User_model user = user_repository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        return estoque_repository.findByUser(user);
-    }
+        return estoque_repository.findByUser(userId.getId());
+    }*/
 
     public Estoque_model SaveProduto(String email, Estoque_model produto) {
         User_model user = user_repository.findByEmail(email)

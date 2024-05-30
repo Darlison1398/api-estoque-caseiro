@@ -2,7 +2,6 @@ package com.example.cadastro.teste.config.security;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -16,47 +15,42 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.util.Collections;
 
 @Component
 public class SecurityFilter extends OncePerRequestFilter {
 
     @Autowired
-    TokenService tokenService;
+    private TokenService tokenService;
 
     @Autowired
-    User_repository user_repository;
+    private User_repository user_repository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        
-        try {
-            String token = recoverToken(request);
-            if (token != null) {
+
+        String token = recoverToken(request);
+        if (token != null) {
+            try {
                 String login = tokenService.validarToken(token);
                 if (login != null) {
                     User_model user_model = user_repository.findByEmail(login)
                             .orElseThrow(() -> new ServletException("Usuário não encontrado"));
-    
-                    var authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
-                    var authentication = new UsernamePasswordAuthenticationToken(user_model, null, authorities);
-    
+
+                    var authentication = new UsernamePasswordAuthenticationToken(user_model, null, user_model.getAuthorities());
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
+            } catch (Exception e) {
+                SecurityContextHolder.clearContext();
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Falha na autenticação: " + e.getMessage());
+                return;
             }
-
-            filterChain.doFilter(request, response);
-            
-            
-        } catch (Exception e) {
-            SecurityContextHolder.clearContext();
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Falha na autenticação: " + e.getMessage());
         }
 
+        filterChain.doFilter(request, response);
     }
 
-    public String recoverToken(HttpServletRequest request) {
+    private String recoverToken(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
