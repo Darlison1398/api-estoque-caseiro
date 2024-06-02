@@ -42,7 +42,7 @@ public class Estoque_service {
         Estoque_model produto = estoque_repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Produto não encontrado"));
 
-        if (!produto.getUser().equals(user)) {
+        if (!produto.getUser().getId().equals(user.getId())) {
             throw new RuntimeException("Você não tem permissão para editar este produto");
         }
 
@@ -63,6 +63,21 @@ public class Estoque_service {
         }
 
         estoque_repository.delete(produto);
+    }
+
+    public Estoque_model getProdutoById(String email, Long id) {
+        User_model user = user_repository.findByEmail(email)
+        .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+    
+        Estoque_model produto = estoque_repository.findById(id)
+        .orElseThrow(() -> new RuntimeException("Produto não encontrado"));
+
+        if (!produto.getUser().equals(user)) {
+            throw new RuntimeException("Você não tem permissão para visualizar este produto");
+        }
+        
+        return produto;
+    
     }
 
 
