@@ -48,8 +48,6 @@ public class Estoque_controller {
 
     @PutMapping("/editarProduto/{id}")
     public Estoque_model editarProduto(@AuthenticationPrincipal User_model user, @PathVariable Long id, @RequestBody Estoque_model newProduto) {
-        //String email = authentication.getName();
-        //return estoque_service.UpdateProduto(email, id, newProduto);
         return estoque_service.UpdateProduto(user.getEmail(), id, newProduto);
     }
 

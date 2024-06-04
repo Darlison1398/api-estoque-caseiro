@@ -5,7 +5,10 @@ import java.util.Optional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -69,6 +72,41 @@ public class AuthController {
 
         return ResponseEntity.badRequest().build();
     }
+
+    @GetMapping("/userById/{id}")
+    public ResponseEntity getUserById(@PathVariable Long id) {
+        Optional<User_model> user_model = this.user_repository.findById(id);
+        
+        if (user_model.isPresent()) {
+            return ResponseEntity.ok(user_model.get());
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PutMapping("/updateUser/{id}")
+    public ResponseEntity updateUser(@PathVariable Long id, @RequestBody RegisterRequestDTO body) {
+        Optional<User_model> user_model = this.user_repository.findById(id);
+        
+        if (user_model.isPresent()) {
+            User_model existingUser = user_model.get();
+            existingUser.setNome(body.nome());
+            existingUser.setLastname(body.lastname());
+            existingUser.setEmail(body.email());
+            
+            // Se a senha for passada no corpo da requisição, atualize-a
+            if (body.password() != null && !body.password().isEmpty()) {
+                existingUser.setPassword(passwordEncoder.encode(body.password()));
+            }
+
+            this.user_repository.save(existingUser);
+            return ResponseEntity.ok(new ResponseDTO(existingUser.getNome(), "Usuário atualizado com sucesso"));
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+
 
     
     
