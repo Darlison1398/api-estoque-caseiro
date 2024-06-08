@@ -3,6 +3,7 @@ package com.example.cadastro.teste.controller;
 import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +19,7 @@ import com.example.cadastro.teste.model.agent.User_model;
 import com.example.cadastro.teste.model.dto.LoginResqestDTO;
 import com.example.cadastro.teste.model.dto.RegisterRequestDTO;
 import com.example.cadastro.teste.model.dto.ResponseDTO;
+import com.example.cadastro.teste.model.dto.UserDTO;
 import com.example.cadastro.teste.repository.User_repository;
 
 import lombok.RequiredArgsConstructor;
@@ -42,7 +44,8 @@ public class AuthController {
 
             String token = this.tokenService.createToken(user_model);
 
-            return ResponseEntity.ok(new ResponseDTO(user_model.getNome(), token));
+            return ResponseEntity.ok(new ResponseDTO(user_model.getId(), user_model.getNome(), token));
+            //return ResponseEntity.ok(new ResponseDTO(user_model.getNome(), token));
         }
 
         return ResponseEntity.badRequest().build();
@@ -66,7 +69,7 @@ public class AuthController {
             this.user_repository.save(newUser);
 
             String token = this.tokenService.createToken(newUser);
-            return ResponseEntity.ok(new ResponseDTO(newUser.getNome(), token));
+            return ResponseEntity.ok(new ResponseDTO(null, newUser.getNome(), token));
             
         }
 
@@ -75,32 +78,39 @@ public class AuthController {
 
     @GetMapping("/userById/{id}")
     public ResponseEntity getUserById(@PathVariable Long id) {
-        Optional<User_model> user_model = this.user_repository.findById(id);
-        
-        if (user_model.isPresent()) {
-            return ResponseEntity.ok(user_model.get());
+        //Optional<User_model> user_model = this.user_repository.findById(id);
+         User_model user_model = (User_model) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (user_model!= null) {
+            return ResponseEntity.ok(user_model);
         } else {
             return ResponseEntity.notFound().build();
         }
     }
 
+    @GetMapping("/me")
+    public ResponseEntity getCurrentUser() {
+        User_model user_model = (User_model) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(new UserDTO( user_model.getNome(), user_model.getLastname(), user_model.getEmail()));
+    }
+
+
     @PutMapping("/updateUser/{id}")
-    public ResponseEntity updateUser(@PathVariable Long id, @RequestBody RegisterRequestDTO body) {
-        Optional<User_model> user_model = this.user_repository.findById(id);
-        
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody RegisterRequestDTO body) {
+        Optional<User_model> user_model = user_repository.findById(id);
+
         if (user_model.isPresent()) {
             User_model existingUser = user_model.get();
             existingUser.setNome(body.nome());
             existingUser.setLastname(body.lastname());
             existingUser.setEmail(body.email());
-            
+
             // Se a senha for passada no corpo da requisição, atualize-a
             if (body.password() != null && !body.password().isEmpty()) {
                 existingUser.setPassword(passwordEncoder.encode(body.password()));
             }
 
-            this.user_repository.save(existingUser);
-            return ResponseEntity.ok(new ResponseDTO(existingUser.getNome(), "Usuário atualizado com sucesso"));
+            user_repository.save(existingUser);
+            return ResponseEntity.ok(new ResponseDTO(id, existingUser.getNome(), "Usuário atualizado com sucesso"));
         } else {
             return ResponseEntity.notFound().build();
         }
