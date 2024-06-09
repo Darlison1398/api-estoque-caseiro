@@ -89,8 +89,12 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity getCurrentUser() {
+        /*User_model user_model = (User_model) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(new UserDTO( user_model.getNome(), user_model.getLastname(), user_model.getEmail()));*/
+        
         User_model user_model = (User_model) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return ResponseEntity.ok(new UserDTO( user_model.getNome(), user_model.getLastname(), user_model.getEmail()));
+        UserDTO userDTO = new UserDTO(user_model.getId(), user_model.getNome(), user_model.getLastname(), user_model.getEmail());
+        return ResponseEntity.ok(userDTO);
     }
 
 
